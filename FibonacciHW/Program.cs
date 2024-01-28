@@ -6,6 +6,7 @@ global using TFiboValue = long;
 using FibonacciHW.Config;
 using FibonacciHW.Services;
 using Microsoft.AspNetCore.Http.Json;
+using FibonacciHW.MiddleWares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,9 @@ var config = builder.Configuration;
 services.AddOptions();
 services.AddIOptionToDI<FibonacciServiceOptions>(config);
 
+services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 services.AddSingleton<IFibonacciCache<TFiboKey, TFiboValue>, FibonacciCache<TFiboKey, TFiboValue>>();
 services.AddSingleton<IFibonacciCalculatorService<TFiboKey, TFiboValue>, FibonacciCalculatorService<TFiboKey, TFiboValue>>();
 
@@ -40,6 +44,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseExceptionHandler();
 
 app.MapControllers();
 

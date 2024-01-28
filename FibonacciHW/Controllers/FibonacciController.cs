@@ -1,4 +1,5 @@
 using FibonacciHW.Api;
+using FibonacciHW.Filters;
 using FibonacciHW.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
@@ -22,9 +23,12 @@ public class FibonacciController : ControllerBase
         _fibonacciCalculator = fibonacciCalculator;
     }
 
+    [DebugLogging]
     [HttpPost(Name = "Calculate")]
     public async Task<ActionResult> Calculate(FibonacciDefs.Request request)
     {
+        throw new Exception("Test exception");
+
         var cts = new CancellationTokenSource(request.TimeoutMs);
 
         var (sequenceList, isOk, errorMsg) =
