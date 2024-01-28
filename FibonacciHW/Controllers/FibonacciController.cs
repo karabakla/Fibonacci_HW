@@ -23,7 +23,7 @@ public class FibonacciController : ControllerBase
     }
 
     [HttpPost(Name = "Calculate")]
-    public async Task<FibonacciDefs.Response> Calculate(FibonacciDefs.Request request)
+    public async Task<ActionResult> Calculate(FibonacciDefs.Request request)
     {
         var cts = new CancellationTokenSource(request.TimeoutMs);
 
@@ -40,9 +40,9 @@ public class FibonacciController : ControllerBase
         if (isOk)
         {
             Debug.Assert(sequenceList is not null);
-            return FibonacciDefs.Response.Success(sequenceList);
+            return Ok(FibonacciDefs.Response.Success(sequenceList));
         }
 
-        return FibonacciDefs.Response.Fail(sequenceList, errorMsg);
+        return Ok(FibonacciDefs.Response.Fail(sequenceList, errorMsg));
     }
 }
