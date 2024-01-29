@@ -1,4 +1,5 @@
 using FibonacciHW.Api;
+using FibonacciHW.Api.Enums;
 using FibonacciHW.Filters;
 using FibonacciHW.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,11 @@ namespace FibonacciHW.Controllers;
 public class FibonacciController : ControllerBase
 {
     private readonly ILogger<FibonacciController> _logger;
-    private readonly IFibonacciCalculatorService<TFiboKey, TFiboValue> _fibonacciCalculator;
+    private readonly IFibonacciCalculatorService<FiboNumber> _fibonacciCalculator;
     public FibonacciController
     (
         ILogger<FibonacciController> logger,
-        IFibonacciCalculatorService<TFiboKey, TFiboValue> fibonacciCalculator
+        IFibonacciCalculatorService<FiboNumber> fibonacciCalculator
     )
     {
         _logger = logger;
@@ -24,29 +25,34 @@ public class FibonacciController : ControllerBase
     }
 
     [DebugLogging]
-    [HttpPost(Name = "Calculate")]
-    public async Task<ActionResult> Calculate(FibonacciDefs.Request request)
+    [HttpPost("Calculate")]
+    public async Task<ActionResult> Calculate(FibonacciEpDef.Request request)
     {
-        throw new Exception("Test exception");
-
-        var cts = new CancellationTokenSource(request.TimeoutMs);
-
-        var (sequenceList, isOk, errorMsg) =
-            await _fibonacciCalculator.CalculateAsync
-            (
-                request.Begin,
-                request.End,
-                request.UseCache,
-                request.MaxMemoryMb,
-                cts.Token
-            );
-
-        if (isOk)
+        if (!request.ValidateRequest(out var validationError))
         {
-            Debug.Assert(sequenceList is not null);
-            return Ok(FibonacciDefs.Response.Success(sequenceList));
+            // We can use Response Fail here, but let's use BadRequest for now.
+            return BadRequest(FibonacciEpDef.Response.Fail(validationError));
         }
 
-        return Ok(FibonacciDefs.Response.Fail(sequenceList, errorMsg));
+        var cts = new CancellationTokenSource(request.Timeout);
+
+        var (sequenceList, status) = await _fibonacciCalculator.CalculateAsync
+        (
+            request.Begin,
+            request.End,
+            request.UseCache,
+            request.MaxMemoryMb.MegaBytesToBytes(),
+            cts.Token
+        );
+
+        if (status == FibonacciServiceEnums.FibonacciServiceStatusCode.None)
+        {
+            Debug.Assert(sequenceList is not null);
+            return Ok(FibonacciEpDef.Response.Success(sequenceList));
+        }
+
+        var problemDetails = FibonacciEpDef.FibonacciProblemDetails.From(status);
+
+        return Ok(FibonacciEpDef.Response.Fail(sequenceList, problemDetails));
     }
 }

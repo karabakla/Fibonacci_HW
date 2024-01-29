@@ -1,9 +1,7 @@
-
-// For easyness of use, Let's set the key and value types here.
-global using TFiboKey = long;
-global using TFiboValue = long;
+global using FiboNumber = long;
 
 using FibonacciHW.Config;
+using FibonacciHW.Api;
 using FibonacciHW.Services;
 using Microsoft.AspNetCore.Http.Json;
 using FibonacciHW.MiddleWares;
@@ -27,13 +25,13 @@ services.Configure<JsonOptions>(options =>
 var config = builder.Configuration;
 
 services.AddOptions();
-services.AddIOptionToDI<FibonacciServiceOptions>(config);
+services.AddIOptionToDI<FibonacciCacheOptions>(config);
 
 services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-services.AddSingleton<IFibonacciCache<TFiboKey, TFiboValue>, FibonacciCache<TFiboKey, TFiboValue>>();
-services.AddSingleton<IFibonacciCalculatorService<TFiboKey, TFiboValue>, FibonacciCalculatorService<TFiboKey, TFiboValue>>();
+services.AddSingleton<IFibonacciCache<FiboNumber>, FibonacciCache<FiboNumber>>();
+services.AddSingleton<IFibonacciCalculatorService<FiboNumber>, FibonacciCalculatorService<FiboNumber>>();
 
 var app = builder.Build();
 

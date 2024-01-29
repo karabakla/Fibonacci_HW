@@ -1,7 +1,7 @@
 ﻿namespace FibonacciHW.Config;
 
 
-public class FibonacciServiceOptions
+public class FibonacciCacheOptions
 {
     public TimeSpan InvalidateCacheAfter { get; set; }
 }
