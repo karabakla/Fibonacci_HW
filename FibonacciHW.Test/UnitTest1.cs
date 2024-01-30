@@ -9,6 +9,12 @@ using static FibonacciHW.Api.Enums.FibonacciServiceEnums;
 
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using FibonacciHW.Controllers;
+using FibonacciHW.Api;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using FibonacciHW.Filters;
+using Microsoft.AspNetCore.Http;
 
 namespace FibonacciHW.Test;
 public class FibonacciHW_Tests
@@ -32,6 +38,18 @@ public class FibonacciHW_Tests
         return new FiboCache(logger, options);
     }
 
+    IFiboCache CreateFiboCacheWithValues(TimeSpan invalidateCacheAfter, List<long> values)
+    {
+        var fiboCache = CreateFiboCache(invalidateCacheAfter);
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            fiboCache.AddOrUpdate(i, values[i]);
+        }
+
+        return fiboCache;
+    }
+
     IFiboCalculatorService CreateFiboCalculatorService(IFiboCache cache, TimeSpan delayForNextFiboNumber)
     {
         var logger = A.Fake<ILogger<FiboCalculatorService>>();
@@ -43,11 +61,16 @@ public class FibonacciHW_Tests
         return fiboService;
     }
 
+    FibonacciController CreateFibonacciController(IFiboCalculatorService fiboService)
+    {
+        var logger = A.Fake<ILogger<FibonacciController>>();
+
+        return new FibonacciController(logger, fiboService);
+    }
 
     //---------------------------------------------------------------------------------------
-    /// <summary>
-    /// Testing the cache.
-    /// </summary>
+    // Testing the cache.
+    //---------------------------------------------------------------------------------------
     [Fact]
     public void Should_Return_Cached_Value()
     {
@@ -86,9 +109,9 @@ public class FibonacciHW_Tests
     }
 
 
-    /// <summary>
-    /// Testing the calculator service without cache
-    /// </summary>
+    //---------------------------------------------------------------------------------------
+    // Testing the calculator service without cache
+    //---------------------------------------------------------------------------------------
     [Fact]
     public async Task Should_Return_Sequence_From_Fibo_Service()
     {
@@ -122,7 +145,7 @@ public class FibonacciHW_Tests
     }
 
     [Fact]
-    public async Task Should_Return_No_Sequence_With_TimeoutError_From_Fibo_Service()
+    public async Task Should_Return_Empty_Sequence_With_TimeoutError_From_Fibo_Service()
     {
         var fiboCache = A.Fake<IFiboCache>();
         var fiboService = CreateFiboCalculatorService(fiboCache, TimeSpan.FromMilliseconds(500));
@@ -140,7 +163,7 @@ public class FibonacciHW_Tests
     }
 
     [Fact]
-    public async Task Should_Return_No_Sequence_With_MemoryError_From_Fibo_Service()
+    public async Task Should_Return_Empty_Sequence_With_MemoryError_From_Fibo_Service()
     {
         var fiboCache = A.Fake<IFiboCache>();
         var fiboService = CreateFiboCalculatorService(fiboCache, TimeSpan.FromMilliseconds(1));
@@ -184,7 +207,6 @@ public class FibonacciHW_Tests
 
         long memoryUsageLimit = Process.GetCurrentProcess().PrivateMemorySize64 + 1024 * 1024;
 
-
         var (sequenceList, status) = await fiboService.CalculateAsync(beginIndex, endIndex, false, memoryUsageLimit, CancellationToken.None);
 
         Assert.Equal(FibonacciServiceStatusCode.MemoryLimit, status);
@@ -192,21 +214,73 @@ public class FibonacciHW_Tests
         Assert.NotEmpty(sequenceList);
     }
 
+
+    //---------------------------------------------------------------------------------------
+    // Testing the calculator service with cache
+    //---------------------------------------------------------------------------------------
     [Fact]
-    public async Task Should_Return_Partial_Sequence_With_Error_From_Fibo_Service()
+    public async Task Should_Return_Sequence_Using_Cache_Without_Timeout_From_Fibo_Service()
     {
-        var fiboCache = CreateFiboCache(TimeSpan.FromSeconds(1000));
-        var fiboService = CreateFiboCalculatorService(fiboCache, TimeSpan.FromMilliseconds(1));
+        var fiboCache = CreateFiboCacheWithValues(TimeSpan.FromSeconds(1000), FiboSequence_0_20);
+
+        var fiboService = CreateFiboCalculatorService(fiboCache, TimeSpan.FromMilliseconds(500));
 
         var beginIndex = 0;
-        var endIndex = 0;
+        var endIndex = 20;
 
-        long memoryUsageLimit = Process.GetCurrentProcess().PrivateMemorySize64 + 1024 * 1024;
+        var ct = new CancellationTokenSource(TimeSpan.FromMilliseconds(500)).Token;
 
-        var (sequenceList, status) = await fiboService.CalculateAsync(beginIndex, endIndex, false, memoryUsageLimit, CancellationToken.None);
+        var (sequenceList, status) = await fiboService.CalculateAsync(beginIndex, endIndex, true, long.MaxValue, ct);
 
-        Assert.Equal(FibonacciServiceStatusCode.MemoryLimit, status);
+        Assert.Equal(FibonacciServiceStatusCode.None, status);
 
         Assert.NotEmpty(sequenceList);
+    }
+
+    //---------------------------------------------------------------------------------------
+    // Testing the controller
+    //---------------------------------------------------------------------------------------
+    [Fact]
+    public async Task Should_Return_Sequence_From_Fibo_Controller()
+    {
+        var fiboCache = CreateFiboCache(TimeSpan.FromSeconds(1000));
+
+        var fiboService = CreateFiboCalculatorService(fiboCache, TimeSpan.FromMilliseconds(500));
+
+        var controller = CreateFibonacciController(fiboService);
+
+        var requestParams = new FibonacciEpDef.GenerateFibonacciSequenceParams(0, 20, false, TimeSpan.FromSeconds(1000), 100);
+
+        var response = await controller.Calculate(requestParams);
+
+        Assert.IsType<OkObjectResult>(response);
+    }
+
+    [Fact]
+    public async Task Should_Return_Partial_Sequence_From_Fibo_Controller()
+    {
+        var fiboCache = CreateFiboCache(TimeSpan.FromSeconds(1000));
+
+        var fiboService = CreateFiboCalculatorService(fiboCache, TimeSpan.FromMilliseconds(500));
+
+        var controller = CreateFibonacciController(fiboService);
+
+
+        var requestParams = new FibonacciEpDef.GenerateFibonacciSequenceParams(0, 20, false, TimeSpan.FromMilliseconds(1500), 100);
+
+
+        var response = await controller.Calculate(requestParams);
+
+        var responseOkObj = response as OkObjectResult;
+
+        Assert.NotNull(responseOkObj);
+
+        var responseObj = responseOkObj.Value as FibonacciEpDef.GenerateFibonacciSequenceResponse;
+
+        Assert.NotNull(responseObj);
+
+        Assert.NotEmpty(responseObj.Sequences);
+
+        Assert.NotEmpty(responseObj.StatusMsg);
     }
 }

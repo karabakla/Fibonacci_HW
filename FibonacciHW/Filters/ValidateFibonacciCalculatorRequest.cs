@@ -30,7 +30,6 @@ public class ValidateFibonacciCalculatorRequestAttribute : ActionFilterAttribute
             return;
         }
 
-
         await next();
     }
 
