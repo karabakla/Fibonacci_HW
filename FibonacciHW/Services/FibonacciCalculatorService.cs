@@ -100,7 +100,7 @@ public class FibonacciCalculatorService<TFibonacciNumber> : IFibonacciCalculator
             catch (InsufficientMemoryException)
             {
                 _logger.LogInformation("Calculation stopped due to insufficient memory");
-                return (result, FibonacciServiceStatusCode.OutOfMemory);
+                return (result, FibonacciServiceStatusCode.MemoryLimit);
             }
             catch (TaskCanceledException)
             {

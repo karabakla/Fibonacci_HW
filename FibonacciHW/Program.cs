@@ -5,6 +5,8 @@ using FibonacciHW.Api;
 using FibonacciHW.Services;
 using Microsoft.AspNetCore.Http.Json;
 using FibonacciHW.MiddleWares;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +14,15 @@ var services = builder.Services;
 
 services.AddControllers();
 services.AddEndpointsApiExplorer();
-services.AddSwaggerGen();
+
+services.AddSwaggerGen(options =>
+{
+    options.MapType<TimeSpan>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Example = new OpenApiString("00:00:00.000")
+    });
+});
 
 services.Configure<JsonOptions>(options =>
 {

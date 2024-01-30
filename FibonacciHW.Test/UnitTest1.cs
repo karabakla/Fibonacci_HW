@@ -150,7 +150,7 @@ public class FibonacciHW_Tests
 
         var (sequenceList, status) = await fiboService.CalculateAsync(beginIndex, endIndex, false, 100, CancellationToken.None);
 
-        Assert.Equal(FibonacciServiceStatusCode.OutOfMemory, status);
+        Assert.Equal(FibonacciServiceStatusCode.MemoryLimit, status);
 
         Assert.Empty(sequenceList);
     }
@@ -187,7 +187,7 @@ public class FibonacciHW_Tests
 
         var (sequenceList, status) = await fiboService.CalculateAsync(beginIndex, endIndex, false, memoryUsageLimit, CancellationToken.None);
 
-        Assert.Equal(FibonacciServiceStatusCode.OutOfMemory, status);
+        Assert.Equal(FibonacciServiceStatusCode.MemoryLimit, status);
 
         Assert.NotEmpty(sequenceList);
     }
@@ -205,7 +205,7 @@ public class FibonacciHW_Tests
 
         var (sequenceList, status) = await fiboService.CalculateAsync(beginIndex, endIndex, false, memoryUsageLimit, CancellationToken.None);
 
-        Assert.Equal(FibonacciServiceStatusCode.OutOfMemory, status);
+        Assert.Equal(FibonacciServiceStatusCode.MemoryLimit, status);
 
         Assert.NotEmpty(sequenceList);
     }

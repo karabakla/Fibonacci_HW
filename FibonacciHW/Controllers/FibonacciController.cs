@@ -24,16 +24,12 @@ public class FibonacciController : ControllerBase
         _fibonacciCalculator = fibonacciCalculator;
     }
 
-    [DebugLogging]
     [HttpPost("Calculate")]
-    public async Task<ActionResult> Calculate(FibonacciEpDef.Request request)
+    [ValidateFibonacciCalculatorRequest]
+    [ProducesResponseType<FibonacciEpDef.GenerateFibonacciSequenceResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<FibonacciEpDef.GenerateFibonacciSequenceResponse>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> Calculate(FibonacciEpDef.GenerateFibonacciSequenceParams request)
     {
-        if (!request.ValidateRequest(out var validationError))
-        {
-            // We can use Response Fail here, but let's use BadRequest for now.
-            return BadRequest(FibonacciEpDef.Response.Fail(validationError));
-        }
-
         var cts = new CancellationTokenSource(request.Timeout);
 
         var (sequenceList, status) = await _fibonacciCalculator.CalculateAsync
@@ -45,14 +41,19 @@ public class FibonacciController : ControllerBase
             cts.Token
         );
 
-        if (status == FibonacciServiceEnums.FibonacciServiceStatusCode.None)
+        string statusMsg = status switch
         {
-            Debug.Assert(sequenceList is not null);
-            return Ok(FibonacciEpDef.Response.Success(sequenceList));
+            FibonacciServiceEnums.FibonacciServiceStatusCode.Timeout => "Timeout",
+            FibonacciServiceEnums.FibonacciServiceStatusCode.MemoryLimit => "Memory Limit Exceeded",
+            _ => string.Empty
+        };
+
+        if (sequenceList.Count == 0)
+        {
+            return BadRequest(statusMsg);
         }
 
-        var problemDetails = FibonacciEpDef.FibonacciProblemDetails.From(status);
-
-        return Ok(FibonacciEpDef.Response.Fail(sequenceList, problemDetails));
+        var response = new FibonacciEpDef.GenerateFibonacciSequenceResponse(sequenceList, statusMsg);
+        return Ok(response);
     }
 }

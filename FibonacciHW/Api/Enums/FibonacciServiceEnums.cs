@@ -6,6 +6,6 @@ public static class FibonacciServiceEnums
     {
         None,
         Timeout,
-        OutOfMemory
+        MemoryLimit
     }
 }
