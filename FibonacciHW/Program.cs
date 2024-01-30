@@ -1,3 +1,5 @@
+
+// For easy use, let's have a common Fibonacci number defined here.
 global using FiboNumber = long;
 
 using FibonacciHW.Config;

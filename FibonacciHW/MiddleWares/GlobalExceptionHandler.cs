@@ -13,8 +13,10 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
 
     async ValueTask<bool> IExceptionHandler.TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        // Lets log the exception here, so we can later on investigate it from logs.
         _logger.LogError($"Unhandled exception occurred: {exception}");
 
+        // We don't want to expose the exception details to the client, just the message so that we can keep track it from logs.
         var problemDetails = new ProblemDetails
         {
             Title = "Internal Server Error",

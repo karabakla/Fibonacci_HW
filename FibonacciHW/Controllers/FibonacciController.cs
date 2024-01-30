@@ -3,8 +3,6 @@ using FibonacciHW.Api.Enums;
 using FibonacciHW.Filters;
 using FibonacciHW.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-
 
 namespace FibonacciHW.Controllers;
 

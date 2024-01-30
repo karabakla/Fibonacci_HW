@@ -13,7 +13,7 @@ public interface IFibonacciCalculatorService<TFibonacciNumber> where TFibonacciN
     /// <param name="useCache">Use caching</param>
     /// <param name="memoryLimitInBytes">Maximum memory limit for current process</param>
     /// <param name="ct">Timeout source for current overall operation</param>
-    /// <returns></returns>
+    /// <returns>List of sequence and status code</returns>
     public Task<(List<TFibonacciNumber> sequenceList, FibonacciServiceStatusCode status)> 
     CalculateAsync
     (

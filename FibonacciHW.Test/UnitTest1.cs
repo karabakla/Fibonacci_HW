@@ -12,13 +12,13 @@ using System.Diagnostics;
 using FibonacciHW.Controllers;
 using FibonacciHW.Api;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using FibonacciHW.Filters;
-using Microsoft.AspNetCore.Http;
 
 namespace FibonacciHW.Test;
+
+// Normally we would have a separate unit test for each component, but for the sake of simplicity let's put them all in one place.
 public class FibonacciHW_Tests
 {
+    
     //---------------------------------------------------------------------------------------
     // Prep methods
     //---------------------------------------------------------------------------------------
